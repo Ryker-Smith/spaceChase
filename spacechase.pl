@@ -12,9 +12,9 @@ use SDL::Rect;
 use SDL::Image;
 use SDL::Event;
 use SDL::Mouse;
+use SDLx::Text;
 
-
-#constants
+# constants 
 use constant bottomLimit=>750;
 use constant screenWidth => 600;
 use constant screenHeight => 800;
@@ -28,7 +28,16 @@ my ($objectRect, $objectStart, $objectMaster);
 my ($object, $objectImage, @allobjects);
 my ($old_ship_x, $old_ship_y);
 my ($new_badguy_rect);
+my ($score);
 
+# A location box for the text
+my ($textbox);
+  $textbox = SDLx::Text->new(size=>'25', # font can also be specified
+                            color=>[255,0,0], # [R,G,B]
+                            x =>50,
+                            y=> 200);
+                            
+###################################################################                            
 $goodguyX = 200;
 $goodguyY = 500;
 # Min & Max for the X co-ordinates 
@@ -40,6 +49,7 @@ $granularity = 30;
 $goodguyY_min = 0;
 $goodguyY_max = 720;
 
+
 # First create a new App
 $app = SDLx::App->new(
     title  => "Space Chase",
@@ -49,12 +59,16 @@ $app = SDLx::App->new(
     exit_on_quit => 1 # Enable 'X' button
 );
 
+# Event handlers
 $app->add_event_handler(\&quit_event);
 $app->add_event_handler(\&key_event);
+# Move handlers
+$app->add_move_handler(\&collisions);
 $app->add_move_handler(\&moveBadGuys);
+# Show handlers
 $app->add_show_handler(\&showBadGuys);
 $app->add_show_handler(\&showGoodGuy);
-$app->add_move_handler(\&collisions);
+
 
 # Set up the background image + rectangle
 $filename = "background.png";
@@ -69,10 +83,9 @@ $goodguy = SDL::Image::load( $filename);
 $goodguyMaster = SDL::Rect->new(0,0,$goodguy->w,$goodguy->h);
 
 # The image that will be falling down 
-# Load asteroids
 $filename = "asteroid04.png";
+# Load asteroids
 $objectImage = SDL::Image::load( $filename);
-
 
 # The asteroids location
 $objectMaster = SDL::Rect->new(0,0, $objectImage->w,$objectImage->h);
@@ -85,6 +98,7 @@ $object->{rect}=0;
 # print "[$objectImage->w]\n";
 push @allobjects, $object;
 
+# This is an array of all the objects 
 $object={};
 $object->{image}=$objectImage;
 $object->{x}= randStartRockX();
@@ -99,6 +113,40 @@ $object->{y} = randStartRockY();
 $object->{rect}=0;
 push @allobjects, $object;
 
+$object={};
+$object->{image}=$objectImage;
+$object->{x}= randStartRockX();
+$object->{y} = randStartRockY();
+$object->{rect}=0;
+push @allobjects, $object;
+
+$object={};
+$object->{image}=$objectImage;
+$object->{x}= randStartRockX();
+$object->{y} = randStartRockY();
+$object->{rect}=0;
+push @allobjects, $object;
+
+$object={};
+$object->{image}=$objectImage;
+$object->{x}= randStartRockX();
+$object->{y} = randStartRockY();
+$object->{rect}=0;
+push @allobjects, $object;
+
+$object={};
+$object->{image}=$objectImage;
+$object->{x}= randStartRockX();
+$object->{y} = randStartRockY();
+$object->{rect}=0;
+push @allobjects, $object;
+
+$object={};
+$object->{image}=$objectImage;
+$object->{x}= randStartRockX();
+$object->{y} = randStartRockY();
+$object->{rect}=0;
+push @allobjects, $object;
 
 my $y=0;
 foreach my $thing (@allobjects) {
@@ -155,7 +203,7 @@ sub key_event {
       $goodguyY = $goodguyY_max;
     }
   }
-  elsif ($key_name eq "left") {
+  elsif ($key_name eq "left") {  
     $goodguyX -=$granularity;
     if ($goodguyX < $goodguyX_min) {
       $goodguyX = $goodguyX_min;
@@ -167,11 +215,15 @@ sub key_event {
       $goodguyX = $goodguyX_max;
     }
   }
+  
+$textbox->write_to($app,"SpaceShip is at: ($goodguyX, $goodguyY)");
+
 }
 
 sub moveBadGuys {
   my ($step, $app, $t) = @_;
   foreach my $thing (@allobjects) {
+  # 288 sets speed for the asteriod
     $thing->{y} += 5;
     if ($thing->{y} > bottomLimit) {
       $thing->{y} = randStartRockY();
@@ -235,3 +287,4 @@ sub collisions {
       }
   }
 }
+

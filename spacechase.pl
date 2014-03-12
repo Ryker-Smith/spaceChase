@@ -18,6 +18,11 @@ use SDLx::Text;
 use constant bottomLimit=>750;
 use constant screenWidth => 600;
 use constant screenHeight => 800;
+use constant some_basic_value => 50;
+# for testing:
+use constant canDie => 0;
+# max number of random asteroids
+use constant maxRocks => 2;
 
 my ($app, $background, $backgroundRect, $event, $filename, $goodguy, $goodguyRect, $goodguyX, $goodguyY);
 my ($granularity, $goodguyX_min, $goodguyX_max, $goodguyY_min, $goodguyY_max);
@@ -36,7 +41,6 @@ my ($textbox);
                             color=>[255,0,0], # [R,G,B]
                             x =>50,
                             y=> 200);
-                            
 ###################################################################                            
 $goodguyX = 200;
 $goodguyY = 500;
@@ -90,69 +94,21 @@ $objectImage = SDL::Image::load( $filename);
 # The asteroids location
 $objectMaster = SDL::Rect->new(0,0, $objectImage->w,$objectImage->h);
 
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-# print "[$objectImage->w]\n";
-push @allobjects, $object;
+# loop to create random asteroids
+for (my $i=0; $i<maxRocks; $i++) {
+  $object={};
+  $object->{image}=$objectImage;
+  $object->{x}= randStartRockX();
+  $object->{y} = randStartRockY();
+  $object->{rect}=0;
+  push @allobjects, $object;
+}
 
-# This is an array of all the objects 
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-push @allobjects, $object;
-
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-push @allobjects, $object;
-
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-push @allobjects, $object;
-
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-push @allobjects, $object;
-
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-push @allobjects, $object;
-
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-push @allobjects, $object;
-
-$object={};
-$object->{image}=$objectImage;
-$object->{x}= randStartRockX();
-$object->{y} = randStartRockY();
-$object->{rect}=0;
-push @allobjects, $object;
-
+$score=1000;
+$textbox->write_to($app,"$score");
 my $y=0;
 foreach my $thing (@allobjects) {
-#   print "[$thing->{x}]\n";
-#  $y++;
- $thing->{rect} = SDL::Rect->new($thing->{x}, $thing->{y}, $thing->{image}->w, $thing->{image}->h);
+  $thing->{rect} = SDL::Rect->new($thing->{x}, $thing->{y}, $thing->{image}->w, $thing->{image}->h);
 }
 
 
@@ -162,13 +118,8 @@ SDL::Video::blit_surface ( $goodguy, $goodguyMaster, $app, $goodguyRect);
 SDL::Video::blit_surface ( $object, $objectMaster, $app, $objectRect);
 SDL::Video::update_rects( $app, $goodguyRect, $backgroundRect);
 
-#my $x =0;
-# foreach my $thing (@allobjects) {
-# SDL::Video::blit_surface( $thing->{image}, $objectMaster, $app, $thing->{rect});
-#}
-
-# set key repeat on after 100ms, then every 0ms
-SDL::Events::enable_key_repeat(100, 1);
+# set key repeat on after 50ms, then every 5ms
+SDL::Events::enable_key_repeat(50, 5);
 
 # Start the game loop
 $app->run;
@@ -215,9 +166,6 @@ sub key_event {
       $goodguyX = $goodguyX_max;
     }
   }
-  
-$textbox->write_to($app,"SpaceShip is at: ($goodguyX, $goodguyY)");
-
 }
 
 sub moveBadGuys {
@@ -234,7 +182,6 @@ sub moveBadGuys {
 
 sub showBadGuys {
   my ($delta, $app) = @_;
-  
   foreach my $thing (@allobjects) {
     my ($badguy_x, $badguy_y) = ($thing->{x}, $thing->{y});
     my ($old_rock_x, $old_rock_y) = ($thing->{old_rock_x},$thing->{old_rock_y} );
@@ -269,22 +216,19 @@ sub randStartRockY {
   my $y=int(rand(200));
   return (0-$y);
 }
+
 sub collisions {
-  use constant some_basic_value => 50;
   my ($step, $app, $t) = @_;
   my ($objectcenterX, $objectcenterY);
   foreach my $thing (@allobjects) {
-#    print "[$thing->{x}][$thing->{y}]\n";
-#    print "G[$goodguyX][$goodguyY]\n";
     my ($objectX, $objectY) = ($thing->{x}, $thing->{y});
     # Using formula for distance between two points
     my $distance = sqrt (($objectX - $goodguyX)**2 + ($objectY - $goodguyY)**2);
     $distance=int($distance);
-    if ($distance < some_basic_value) {
+    if (($distance < some_basic_value) && (canDie)) {
       print "You've been hit!\n";
       SDL::Video::blit_surface( $background, $backgroundRect, $app, $backgroundRect);
       $app->stop;
       }
   }
 }
-

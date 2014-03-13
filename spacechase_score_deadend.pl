@@ -22,10 +22,8 @@ use constant some_basic_value => 50;
 # for testing:
 use constant canDie => 0;
 # max number of random asteroids
-use constant maxRocks => 4;
+use constant maxRocks => 2;
 use constant rockSpeed => 5;
-use constant repeatDuration => 1;
-use constant everyDuration => 40;
 
 my ($app, $background, $backgroundRect, $event, $filename, $goodguy, $goodguyRect, $goodguyX, $goodguyY);
 my ($granularity, $goodguyX_min, $goodguyX_max, $goodguyY_min, $goodguyY_max);
@@ -71,19 +69,19 @@ $app->add_show_handler(\&showGoodGuy);
 $app->add_show_handler(\&scoreUpdate);
 
 # Set up the background image + rectangle
-$filename = "images/background.png";
+$filename = "background.png";
 $background = SDL::Image::load( $filename);
 $cover = $background;
 $backgroundRect = SDL::Rect->new(0,0,$background->w,$background->h);
 
 # The good guy
-$filename = "images/spaceship04.png";
+$filename = "spaceship04.png";
 $goodguy = SDL::Image::load( $filename);
 # make master recatngle for later copying
 $goodguyMaster = SDL::Rect->new(0,0,$goodguy->w,$goodguy->h);
 
 # The image that will be falling down
-$filename = "images/asteroid04.png";
+$filename = "asteroid04.png";
 # Load asteroids
 $objectImage = SDL::Image::load( $filename);
 
@@ -92,7 +90,7 @@ $objectMaster = SDL::Rect->new(0,0, $objectImage->w,$objectImage->h);
 
 # scores:
 my ($score, $scoreBanner, $scoreMaster, $scoreRect, $scoreText, @scoreDigits);
-$filename = "images/ScoreBanner.png";
+$filename = "ScoreBanner.png";
 $scoreBanner = SDL::Image::load( $filename);
 $scoreMaster=SDL::Rect->new(0,0, $scoreBanner->w,$scoreBanner->h);
 # a text box for the score
@@ -103,6 +101,22 @@ $scoreText = SDLx::Text->new(size=>'32', # font can also be specified
 $score=0;
 $scoreText->write_to($app,"$score");
 $scoreRect= SDL::Rect->new(0,0,$scoreBanner->w,$scoreBanner->h);
+
+my (%baseDigits, %baseDigitsMaster);
+foreach (0..9) {
+  $filename="digit_" . $_ . ".png";
+  $baseDigits{$_}= SDL::Image::load( $filename);
+  $baseDigitsMaster{$_}=SDL::Rect->new(0,0, $baseDigits{$_}->w,$baseDigits{$_}->h);
+}
+foreach (1..5) {
+  my %digit={};
+  $digit{value}=0;
+  $digit{which}=$_;
+  $digit{image}= $baseDigits{0};
+  $digit{x}=300 + ($_ * 26); # width of digit image
+  $digit{y}=25;
+  push @scoreDigits, %digit;
+}
 
 # loop to create random asteroids
 for (my $i=0; $i<maxRocks; $i++) {
@@ -117,9 +131,15 @@ foreach my $thing (@allobjects) {
   $thing->{rect} = SDL::Rect->new($thing->{x}, $thing->{y}, $thing->{image}->w, $thing->{image}->h);
 }
 $goodguyRect = SDL::Rect->new($goodguyX,$goodguyY,$goodguy->w,$goodguy->h);
+# are these necessary?
+SDL::Video::blit_surface( $background, $backgroundRect, $app, $backgroundRect );
+SDL::Video::blit_surface ( $goodguy, $goodguyMaster, $app, $goodguyRect);
+SDL::Video::blit_surface ( $object, $objectMaster, $app, $objectRect);
+SDL::Video::blit_surface ( $scoreBanner, $scoreMaster, $app, $scoreRect);
+SDL::Video::update_rects( $app, $goodguyRect, $backgroundRect, $scoreRect);
 
-# set key repeat on after Xs, then every Yms
-SDL::Events::enable_key_repeat(repeatDuration, everyDuration);
+# set key repeat on after 50ms, then every 50ms
+SDL::Events::enable_key_repeat(50, 50);
 
 # Start the game loop
 $app->run;
@@ -176,8 +196,6 @@ sub moveBadGuys {
     if ($thing->{y} > bottomLimit) {
       $thing->{y} = randStartRockY();
       $thing->{x} = randStartRockX();
-      # add something for each asteroid we survive?
-      $score+=100;
     }
   }
 }
@@ -190,7 +208,10 @@ sub showBadGuys {
     my $object = $thing->{image};
     if (($badguy_x != $old_rock_x) || ($badguy_y != $old_rock_y)) {
       $new_badguy_rect = SDL::Rect->new($badguy_x,$badguy_y,$object->w,$object->h);
+      #$coverRect = SDL::Rect->new($old_rock_x, $old_rock_y, $object->w, $object->h);
+      #SDL::Video::blit_surface( $cover, $coverRect, $app, $coverRect );
       SDL::Video::blit_surface( $object, $objectMaster, $app, $new_badguy_rect);
+      SDL::Video::update_rects( $app, $new_badguy_rect);
       $app->sync();
     }
   }
@@ -199,10 +220,12 @@ sub showBadGuys {
 sub showGoodGuy {
   my ($delta, $app) = @_;
   my ($new_ship_rect, $coverRect);
+  #print "[$goodguyY][$old_ship_y]\n";
   $new_ship_rect = SDL::Rect->new($goodguyX,$goodguyY,$goodguy->w,$goodguy->h);
   SDL::Video::blit_surface( $cover, $coverRect, $app, $coverRect );
   $coverRect = SDL::Rect->new($old_ship_x, $old_ship_y, $goodguy->w, $goodguy->h);
   SDL::Video::blit_surface ( $goodguy, $goodguyMaster, $app, $new_ship_rect);
+  SDL::Video::update_rects( $app,  $coverRect, $new_ship_rect);
 }
 
 sub randStartRockX {
@@ -238,5 +261,14 @@ sub scoreCalculate {
 sub scoreUpdate {
   my ($delta, $app) = @_;
   SDL::Video::blit_surface ( $scoreBanner, $scoreMaster, $app, $scoreRect);
-  $scoreText->write_to($app, $score);
+  $scoreText->write_to($app,"$score");
+  my $r;
+  foreach my %digit (@scoreDigits) {
+    print "[$r]",$digit{x}, " ";
+    $r++;
+    my $numberRect = SDL::Rect->new($digit{x}, $digit{y}, $digit{image}->w, $digit{image}->h);
+    SDL::Video::blit_surface ( $baseDigits{ $digit{which} }, $baseDigitsMaster{ $digit{which} }, $app, $numberRect);
+    #SDL::Video::update_rects( $app,  $coverRect, $new_ship_rect);
+  }
+  print "\n";
 }

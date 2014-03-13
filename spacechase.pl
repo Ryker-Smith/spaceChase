@@ -35,12 +35,6 @@ my ($old_ship_x, $old_ship_y);
 my ($new_badguy_rect);
 my ($score);
 
-# A location box for the text
-my ($textbox);
-  $textbox = SDLx::Text->new(size=>'25', # font can also be specified
-                            color=>[255,0,0], # [R,G,B]
-                            x =>50,
-                            y=> 200);
 ###################################################################                            
 $goodguyX = 200;
 $goodguyY = 500;
@@ -69,9 +63,11 @@ $app->add_event_handler(\&key_event);
 # Move handlers
 $app->add_move_handler(\&collisions);
 $app->add_move_handler(\&moveBadGuys);
+$app->add_move_handler(\&scoreCalculate);
 # Show handlers
 $app->add_show_handler(\&showBadGuys);
 $app->add_show_handler(\&showGoodGuy);
+$app->add_show_handler(\&scoreUpdate);
 
 
 # Set up the background image + rectangle
@@ -94,6 +90,20 @@ $objectImage = SDL::Image::load( $filename);
 # The asteroids location
 $objectMaster = SDL::Rect->new(0,0, $objectImage->w,$objectImage->h);
 
+# scores:
+my ($scoreBanner, $scoreMaster, $scoreRect, $scoreText);
+$filename = "ScoreBanner.png";
+$scoreBanner = SDL::Image::load( $filename);
+$scoreMaster=SDL::Rect->new(0,0, $scoreBanner->w,$scoreBanner->h);
+# a text box for the score
+$scoreText = SDLx::Text->new(size=>'32', # font can also be specified
+                            color=>[229,202,122], # [R,G,B]
+                            x =>150,
+                            y=> 25);
+$score=0;
+$scoreText->write_to($app,"$score");
+$scoreRect= SDL::Rect->new(0,0,$scoreBanner->w,$scoreBanner->h);
+
 # loop to create random asteroids
 for (my $i=0; $i<maxRocks; $i++) {
   $object={};
@@ -104,22 +114,19 @@ for (my $i=0; $i<maxRocks; $i++) {
   push @allobjects, $object;
 }
 
-$score=1000;
-$textbox->write_to($app,"$score");
-my $y=0;
 foreach my $thing (@allobjects) {
   $thing->{rect} = SDL::Rect->new($thing->{x}, $thing->{y}, $thing->{image}->w, $thing->{image}->h);
 }
-
 
 $goodguyRect = SDL::Rect->new($goodguyX,$goodguyY,$goodguy->w,$goodguy->h);
 SDL::Video::blit_surface( $background, $backgroundRect, $app, $backgroundRect );
 SDL::Video::blit_surface ( $goodguy, $goodguyMaster, $app, $goodguyRect);
 SDL::Video::blit_surface ( $object, $objectMaster, $app, $objectRect);
-SDL::Video::update_rects( $app, $goodguyRect, $backgroundRect);
+SDL::Video::blit_surface ( $scoreBanner, $scoreMaster, $app, $scoreRect);
+SDL::Video::update_rects( $app, $goodguyRect, $backgroundRect, $scoreRect);
 
 # set key repeat on after 50ms, then every 5ms
-SDL::Events::enable_key_repeat(50, 5);
+SDL::Events::enable_key_repeat(50, 50);
 
 # Start the game loop
 $app->run;
@@ -231,4 +238,15 @@ sub collisions {
       $app->stop;
       }
   }
+}
+
+sub scoreCalculate {
+  my ($step, $app, $t) = @_;
+  $score++;
+}
+
+sub scoreUpdate {
+  my ($delta, $app) = @_;
+  SDL::Video::blit_surface ( $scoreBanner, $scoreMaster, $app, $scoreRect);
+  $scoreText->write_to($app,"$score");
 }

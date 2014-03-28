@@ -2,6 +2,7 @@
 use strict;
 
 # Space Chase 
+# Score is always increasing and goes up 10 points for each asteriod you survive
 # 1/2014
 
 use SDL;
@@ -20,13 +21,14 @@ use constant screenWidth => 600;
 use constant screenHeight => 800;
 use constant some_basic_value => 50;
 # for testing:
-use constant canDie => 0;
+use constant canDie => 1;
 # max number of random asteroids
-use constant maxRocks => 4;
-use constant rockSpeed => 5;
-use constant repeatDuration => 1;
+# use constant $maxRocks => 5;
+use constant rockSpeed => 15;
+use constant repeatDuration => 10;
 use constant everyDuration => 40;
 
+my $maxRocks = 1;
 my ($app, $background, $backgroundRect, $event, $filename, $goodguy, $goodguyRect, $goodguyX, $goodguyY);
 my ($granularity, $goodguyX_min, $goodguyX_max, $goodguyY_min, $goodguyY_max);
 my ($cover);
@@ -38,6 +40,7 @@ my ($old_ship_x, $old_ship_y);
 my ($new_badguy_rect);
 
 ###################################################################                            
+
 $goodguyX = 200;
 $goodguyY = 500;
 # Min & Max for the X co-ordinates 
@@ -66,6 +69,7 @@ $app->add_move_handler(\&collisions);
 $app->add_move_handler(\&moveBadGuys);
 $app->add_move_handler(\&scoreCalculate);
 # Show handlers
+$app->add_show_handler(\&Level);
 $app->add_show_handler(\&showBadGuys);
 $app->add_show_handler(\&showGoodGuy);
 $app->add_show_handler(\&scoreUpdate);
@@ -83,7 +87,7 @@ $goodguy = SDL::Image::load( $filename);
 $goodguyMaster = SDL::Rect->new(0,0,$goodguy->w,$goodguy->h);
 
 # The image that will be falling down
-$filename = "images/asteroid04.png";
+$filename = "images/asteroid05.png";
 # Load asteroids
 $objectImage = SDL::Image::load( $filename);
 
@@ -105,17 +109,15 @@ $scoreText->write_to($app,"$score");
 $scoreRect= SDL::Rect->new(0,0,$scoreBanner->w,$scoreBanner->h);
 
 # loop to create random asteroids
-for (my $i=0; $i<maxRocks; $i++) {
+for (my $i=0; $i<$maxRocks; $i++) {
   $object={};
   $object->{image}=$objectImage;
   $object->{x}= randStartRockX();
   $object->{y} = randStartRockY();
-  $object->{rect}=0;
+  $object->{rect}= SDL::Rect->new($object->{x}, $object->{y}, $object->{image}->w, $object->{image}->h);;
   push @allobjects, $object;
 }
-foreach my $thing (@allobjects) {
-  $thing->{rect} = SDL::Rect->new($thing->{x}, $thing->{y}, $thing->{image}->w, $thing->{image}->h);
-}
+
 $goodguyRect = SDL::Rect->new($goodguyX,$goodguyY,$goodguy->w,$goodguy->h);
 
 # set key repeat on after Xs, then every Yms
@@ -125,6 +127,7 @@ SDL::Events::enable_key_repeat(repeatDuration, everyDuration);
 $app->run;
 
 ############################################################ SUBROUTINES #########################################################################
+
 
 sub quit_event {
   my ($event, $app) = @_;
@@ -177,7 +180,7 @@ sub moveBadGuys {
       $thing->{y} = randStartRockY();
       $thing->{x} = randStartRockX();
       # add something for each asteroid we survive?
-      $score+=100;
+      $score+=10;
     }
   }
 }
@@ -224,6 +227,7 @@ sub collisions {
     $distance=int($distance);
     if (($distance < some_basic_value) && (canDie)) {
       print "You've been hit!\n";
+      print "Your score was $score\n";
       SDL::Video::blit_surface( $background, $backgroundRect, $app, $backgroundRect);
       $app->stop;
       }
@@ -239,4 +243,18 @@ sub scoreUpdate {
   my ($delta, $app) = @_;
   SDL::Video::blit_surface ( $scoreBanner, $scoreMaster, $app, $scoreRect);
   $scoreText->write_to($app, $score);
+}
+
+sub Level {
+  my ($event, $app) = @_;
+  # Checks if score is multiple of 500
+  # Adds another asteroid
+  if ($score % 500 == 0) {
+    $object={};
+    $object->{image}=$objectImage;
+    $object->{x}= randStartRockX();
+    $object->{y} = randStartRockY();
+    $object->{rect}=SDL::Rect->new($object->{x}, $object->{y}, $object->{image}->w, $object->{image}->h);;
+    push @allobjects, $object;   
+  }
 }

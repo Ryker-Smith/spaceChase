@@ -33,8 +33,6 @@ use constant showLivesStartX => 400;
 use constant showLivesStartY => 20;
 use constant shipStartX => 200;
 use constant shipStartY => 650;
-# sleep 1 second when collision occurs
-use constant sleepWhenDeadTime => 2;
 use constant asteroidUpScore => 500;
 use constant livesUpScore => 2500;
 
@@ -241,8 +239,11 @@ sub randStartRockY {
 
 sub collisions {
   my ($step, $app, $t) = @_;
-  my ($objectcenterX, $objectcenterY);
+  my ($objectcenterX, $objectcenterY, $pos);
+  # this may be kludgy ...
+  $pos=0; # count position in array
   foreach my $thing (@allObjects) {
+    if ($thing != ()) {};
     my ($objectX, $objectY) = ($thing->{x}, $thing->{y});
     # Using formula for distance between two points
     my $distance = sqrt (($objectX - $goodguyX)**2 + ($objectY - $goodguyY)**2);
@@ -252,17 +253,29 @@ sub collisions {
       $goodguyX = shipStartX;
       $goodguyY = shipStartY;
       showLives();
+      # show collision msg
       SDL::Video::blit_surface ( $collisionBanner, $collisionMaster, $app, $collisionRect);
       SDL::Video::update_rects($app, $collisionRect);
+      # if more than one array element (asteroids), use splice to remove the
+      # one we've just hit
+      if (scalar @allObjects > 1) {
+        splice @allObjects, $pos ,1;
+      }
+      # pause for applause
       $app->pause;
-      #sleep(sleepWhenDeadTime);
+      #
       if ($lives == 0) {
         print "You've been hit!\n";
         print "Your score was $score\n";
         SDL::Video::blit_surface( $background, $backgroundRect, $app, $backgroundRect);
         $app->stop;
       }
+      else {
+        # if we're not dead, then hop out of loop cleanly
+        last;
+      }
     }
+    $pos++;
   }
 }
 

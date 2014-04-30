@@ -1,8 +1,8 @@
 #!/usr/bin/perl
 use strict;
 
+# Creator: Eoin Kearney
 # Space Chase 
-# Score is always increasing and goes up 10 points for each asteriod you survive
 # 1/2014
 
 use SDL;
@@ -15,6 +15,7 @@ use SDL::Event;
 use SDL::Mouse;
 use SDLx::Text;
 use SDL::GFX::Rotozoom;
+use SDLx::Music;
 
 # constants 
 use constant bottomLimit=>750;
@@ -40,7 +41,7 @@ my $maxRocks = 1;
 # How many lives??
 my $lives=maxLives;
 #
-my ($app, $background, $backgroundRect, $event, $filename, $goodguy, $goodguyRect, $goodguyX, $goodguyY);
+my ($app, $background, $backgroundRect, $event, $filename, $goodguy, $goodguyRect, $goodguyX, $goodguyY, $music, $playing);
 my ($granularity, $goodguyX_min, $goodguyX_max, $goodguyY_min, $goodguyY_max);
 my ($cover);
 my ($coverRect, $old_x);
@@ -80,11 +81,18 @@ $app->add_move_handler(\&collisions);
 $app->add_move_handler(\&moveBadGuys);
 $app->add_move_handler(\&scoreCalculate);
 # Show handlers
+# Must be in correct order
 $app->add_show_handler(\&Level);
-$app->add_show_handler(\&showBadGuys);
 $app->add_show_handler(\&showGoodGuy);
+$app->add_show_handler(\&showBadGuys);
 $app->add_show_handler(\&scoreUpdate);
 $app->add_show_handler(\&showLives);
+
+# The music is played here.
+# Loop is set to 0 so it loops indefinitely
+$music = SDLx::Music->new();
+$music->data(music => 'Exhilarate.ogg');
+$music->play($music->data('music'), loops => 0);
 
 # Set up the background image + rectangle
 $filename = "images/background.png";
@@ -142,7 +150,7 @@ $goodguyRect = SDL::Rect->new($goodguyX,$goodguyY,$goodguy->w,$goodguy->h);
 
 # set key repeat on after Xs, then every Yms
 SDL::Events::enable_key_repeat(repeatDuration, everyDuration);
-
+$app->add_show_handler(sub{$app->sync()}); #Sync must always run LAST
 # Start the game loop
 $app->run;
 
@@ -214,7 +222,6 @@ sub showBadGuys {
     if (($badguy_x != $old_rock_x) || ($badguy_y != $old_rock_y)) {
       $new_badguy_rect = SDL::Rect->new($badguy_x,$badguy_y,$object->w,$object->h);
       SDL::Video::blit_surface( $object, $objectMaster, $app, $new_badguy_rect);
-      $app->sync();
     }
   }
 }
@@ -293,7 +300,7 @@ sub scoreUpdate {
 sub Level {
   my ($event, $app) = @_;
   # Checks if score is multiple of 500
-  # Adds another asteroid
+  # If so, adds another asteroid
   if ($score % asteroidUpScore == 0) {
     $object={};
     $object->{image}=$objectImage;
@@ -302,8 +309,8 @@ sub Level {
     $object->{rect}=SDL::Rect->new($object->{x}, $object->{y}, $object->{image}->w, $object->{image}->h);;
     push @allObjects, $object;
   }
-  # every 5000 points, add 1 life
-  if ( ($score % livesUpScore == 0) && ($lives < maxLives) ){
+  # every 2500 points, add 1 life
+  if ( ($score % livesUpScore == 2500) && ($lives < maxLives) ){
     $lives++;
   }
 }

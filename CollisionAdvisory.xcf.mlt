@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mlt LC_NUMERIC="en_GB.UTF-8" version="0.8.8" root="/home/fachtna" title="Anonymous Submission" producer="playlist0">
+  <profile description="HDV 1440x1080i 25 fps" width="1440" height="1080" progressive="0" sample_aspect_num="4" sample_aspect_den="3" display_aspect_num="16" display_aspect_den="9" frame_rate_num="25" frame_rate_den="1" colorspace="709"/>
+  <producer id="producer0" in="0" out="14999">
+    <property name="mlt_type">producer</property>
+    <property name="length">15000</property>
+    <property name="eof">pause</property>
+    <property name="resource">00-2014/00-Programming/spaceChase/CollisionAdvisory.xcf?-1</property>
+    <property name="aspect_ratio">1</property>
+    <property name="reverse">1</property>
+    <property name="mlt_service">framebuffer</property>
+  </producer>
+  <playlist id="playlist0" title="Anonymous Submission">
+    <entry producer="producer0" in="0" out="14999"/>
+  </playlist>
+</mlt>

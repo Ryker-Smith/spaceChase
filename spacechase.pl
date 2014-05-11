@@ -16,6 +16,7 @@ use SDL::Mouse;
 use SDLx::Text;
 use SDL::GFX::Rotozoom;
 use SDLx::Music;
+use SDLx::Sound;
 
 # constants 
 use constant bottomLimit=>750;
@@ -197,6 +198,9 @@ sub key_event {
       $goodguyX = $goodguyX_max;
     }
   }
+  elsif (($key_name eq "p") || ($key_name eq "P")) {
+    $app->pause();
+  }
 }
 
 sub moveBadGuys {
@@ -272,9 +276,15 @@ sub collisions {
       $app->pause;
       #
       if ($lives == 0) {
+        my $snd = SDLx::Sound->new();
+        # loads and plays a single sound now
+        $snd->play('youdead.wav');
+        # but give OS time to send it to the audio card
+        sleep 1;
         print "You've been hit!\n";
         print "Your score was $score\n";
         SDL::Video::blit_surface( $background, $backgroundRect, $app, $backgroundRect);
+
         $app->stop;
       }
       else {
